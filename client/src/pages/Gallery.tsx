@@ -24,26 +24,32 @@ export default function Gallery() {
     setLoading(true);
 
     try {
-      const apiSources = ['nsfw_api', 'waifu_pics_api', 'nekos_moe_api'];
       const newImages: GalleryImage[] = [];
 
       for (let i = 0; i < ITEMS_PER_PAGE; i++) {
-        const randomApiSource = apiSources[Math.floor(Math.random() * apiSources.length)];
-        let category = null;
+        let apiSource: string;
+        let category = selectedCategory;
 
-        if (randomApiSource !== 'nekos_moe_api') {
-          if (randomApiSource === 'waifu_pics_api') {
+        // If no category is selected, use random API and category
+        if (!selectedCategory) {
+          const apiSources = ['nsfw_api', 'waifu_pics_api', 'nekos_moe_api'];
+          apiSource = apiSources[Math.floor(Math.random() * apiSources.length)];
+
+          if (apiSource === 'waifu_pics_api') {
             const waifuCategories = ["waifu", "neko", "blowjob"];
             category = `waifu_${waifuCategories[Math.floor(Math.random() * waifuCategories.length)]}`;
-          } else {
+          } else if (apiSource === 'nsfw_api') {
             const nsfwCategories = [
               "anal", "ass", "blowjob", "breeding", "buttplug", "cages",
               "ecchi", "feet", "fo", "gif", "hentai", "legs",
               "masturbation", "milf", "neko", "paizuri", "petgirls",
               "pierced", "selfie", "smothering", "socks", "vagina", "yuri"
             ];
-            category = selectedCategory || nsfwCategories[Math.floor(Math.random() * nsfwCategories.length)];
+            category = nsfwCategories[Math.floor(Math.random() * nsfwCategories.length)];
           }
+        } else {
+          // If category is selected, only use nsfw_api
+          apiSource = 'nsfw_api';
         }
 
         const apiEndpoints = {
@@ -54,25 +60,27 @@ export default function Gallery() {
 
         let imageUrl = '';
         try {
-          const response = await fetch(
-            category ? 
-              `${apiEndpoints[randomApiSource as keyof typeof apiEndpoints]}${category.replace('waifu_', '')}` :
-              apiEndpoints[randomApiSource as keyof typeof apiEndpoints]
-          );
-          
+          const endpoint = category?.startsWith('waifu_') 
+            ? `${apiEndpoints.waifu_pics_api}${category.replace('waifu_', '')}`
+            : category 
+              ? `${apiEndpoints[apiSource as keyof typeof apiEndpoints]}${category}`
+              : apiEndpoints[apiSource as keyof typeof apiEndpoints];
+
+          const response = await fetch(endpoint);
+
           if (!response.ok) continue;
-          
+
           const data = await response.json();
-          if (randomApiSource === 'waifu_pics_api') {
+          if (apiSource === 'waifu_pics_api') {
             imageUrl = data.url;
-          } else if (randomApiSource === 'nekos_moe_api' && data.images?.[0]) {
+          } else if (apiSource === 'nekos_moe_api' && data.images?.[0]) {
             imageUrl = `https://nekos.moe/image/${data.images[0].id}.jpg`;
           } else {
             imageUrl = data.url_japan;
           }
 
           if (imageUrl) {
-            newImages.push({ url: imageUrl, apiSource: randomApiSource, category });
+            newImages.push({ url: imageUrl, apiSource, category });
           }
         } catch (error) {
           console.error('Error fetching image:', error);
