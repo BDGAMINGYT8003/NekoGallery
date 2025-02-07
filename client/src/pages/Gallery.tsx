@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Download } from 'lucide-react';
 import CategorySelect from '../components/CategorySelect';
 import { useIntersection } from '@/hooks/use-intersection';
 
@@ -21,7 +23,6 @@ export default function Gallery() {
   const loadingRef = useRef(false);
   const endRef = useRef<HTMLDivElement>(null);
 
-  // Set up intersection observer for infinite scroll
   const isIntersecting = useIntersection(endRef, {
     root: null,
     rootMargin: '100px',
@@ -40,7 +41,6 @@ export default function Gallery() {
         let apiSource: string;
         let category = selectedCategory;
 
-        // If no category is selected, use random API and category
         if (!selectedCategory) {
           const apiSources = ['nsfw_api', 'waifu_pics_api', 'nekos_moe_api'];
           apiSource = apiSources[Math.floor(Math.random() * apiSources.length)];
@@ -82,20 +82,17 @@ export default function Gallery() {
     }
   }, [selectedCategory]);
 
-  // Fetch initial images
   useEffect(() => {
     setImages([]);
     fetchImages();
   }, [selectedCategory, fetchImages]);
 
-  // Handle infinite scroll
   useEffect(() => {
     if (isIntersecting) {
       fetchImages();
     }
   }, [isIntersecting, fetchImages]);
 
-  // Helper function to fetch image from API
   async function fetchImageFromApi(apiSource: string, category: string | null): Promise<GalleryImage | null> {
     const apiEndpoints = {
       nsfw_api: 'https://api.n-sfw.com/nsfw/',
@@ -126,6 +123,24 @@ export default function Gallery() {
     return imageUrl ? { url: imageUrl, apiSource, category } : null;
   }
 
+  const handleDownload = async (imageUrl: string) => {
+    try {
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `image-${Date.now()}.${blob.type.split('/')[1]}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading image:', error);
+      setError('Failed to download image. Please try again.');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <Card className="mb-8">
@@ -150,13 +165,13 @@ export default function Gallery() {
         {images.map((image, index) => (
           <div
             key={`${image.url}-${index}`}
-            className="relative w-full"
+            className="relative w-full group"
           >
-            <div className="group relative w-full">
+            <div className="relative w-full">
               <img
                 src={image.url}
                 alt="Artwork"
-                className="w-full h-auto object-contain rounded-lg transition-transform duration-200 hover:scale-[1.02]"
+                className="w-full h-auto object-contain rounded-lg transition-transform duration-200 group-hover:scale-[1.02]"
                 loading="lazy"
                 onLoad={(e) => {
                   const img = e.target as HTMLImageElement;
@@ -164,6 +179,17 @@ export default function Gallery() {
                   img.style.aspectRatio = `${img.naturalWidth} / ${img.naturalHeight}`;
                 }}
               />
+              <div className="absolute bottom-0 left-0 right-0 p-2 bg-black/50 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex justify-center rounded-b-lg">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-white hover:text-primary hover:bg-white/20"
+                  onClick={() => handleDownload(image.url)}
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Download
+                </Button>
+              </div>
             </div>
           </div>
         ))}
