@@ -20,6 +20,7 @@ export default function Gallery() {
   const [loading, setLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [downloadingIndex, setDownloadingIndex] = useState<number | null>(null);
   const loadingRef = useRef(false);
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -123,21 +124,39 @@ export default function Gallery() {
     return imageUrl ? { url: imageUrl, apiSource, category } : null;
   }
 
-  const handleDownload = async (imageUrl: string) => {
+  const handleDownload = async (imageUrl: string, index: number) => {
     try {
-      const response = await fetch(imageUrl);
+      setDownloadingIndex(index);
+      setError(null);
+
+      const response = await fetch(imageUrl, {
+        mode: 'cors',
+        headers: {
+          'Accept': 'image/*'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch image: ${response.statusText}`);
+      }
+
+      const contentType = response.headers.get('content-type');
+      const extension = contentType?.split('/')[1] || 'jpg';
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
+      a.style.display = 'none';
       a.href = url;
-      a.download = `image-${Date.now()}.${blob.type.split('/')[1]}`;
+      a.download = `image-${Date.now()}.${extension}`;
       document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
     } catch (error) {
       console.error('Error downloading image:', error);
       setError('Failed to download image. Please try again.');
+    } finally {
+      setDownloadingIndex(null);
     }
   };
 
@@ -184,10 +203,11 @@ export default function Gallery() {
                   variant="ghost"
                   size="sm"
                   className="text-white hover:text-primary hover:bg-white/20"
-                  onClick={() => handleDownload(image.url)}
+                  onClick={() => handleDownload(image.url, index)}
+                  disabled={downloadingIndex === index}
                 >
-                  <Download className="w-4 h-4 mr-2" />
-                  Download
+                  <Download className={`w-4 h-4 mr-2 ${downloadingIndex === index ? 'animate-bounce' : ''}`} />
+                  {downloadingIndex === index ? 'Downloading...' : 'Download'}
                 </Button>
               </div>
             </div>
