@@ -218,7 +218,7 @@ export default function Gallery() {
           Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
             <div
               key={`skeleton-${index}`}
-              className="relative w-full bg-muted animate-pulse rounded-lg min-h-[200px]"
+              className="relative w-full aspect-square bg-muted animate-pulse rounded-lg"
             />
           ))
         )}
