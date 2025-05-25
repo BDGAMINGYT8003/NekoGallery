@@ -17,6 +17,7 @@ export const images = pgTable("images", {
   height: integer("height").notNull(),
   category: text("category").notNull(),
   apiSource: text("api_source").notNull(),
+  createdAt: text("created_at").defaultNow().notNull(),
 });
 
 // Add categories table for easier filtering
@@ -40,6 +41,7 @@ export const insertImageSchema = createInsertSchema(images).pick({
   height: true,
   category: true,
   apiSource: true,
+  createdAt: true,
 });
 
 // Schema for category operations
