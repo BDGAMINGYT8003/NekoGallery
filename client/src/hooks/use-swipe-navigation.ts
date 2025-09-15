@@ -3,7 +3,7 @@ import { useMotionValue, useTransform } from 'framer-motion';
 import { useIsMobile } from './use-mobile';
 import { triggerHapticFeedback } from '@/lib/haptics';
 
-export function useSwipeNavigation(imageCount: number) {
+export function useSwipeNavigation(imageCount: number, onFetchNew: () => void) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const isMobile = useIsMobile();
 
@@ -11,10 +11,13 @@ export function useSwipeNavigation(imageCount: number) {
   const opacity = useTransform(x, [-200, 0, 200], [0.5, 1, 0.5]);
 
   const onDragEnd = (event: any, info: any) => {
-    if (info.offset.x < -100) {
+    if (info.offset.x < -100) { // Swiped left
+      if (currentIndex === imageCount - 1) {
+        onFetchNew();
+      }
       setCurrentIndex((prev) => Math.min(prev + 1, imageCount - 1));
       if (isMobile) triggerHapticFeedback();
-    } else if (info.offset.x > 100) {
+    } else if (info.offset.x > 100) { // Swiped right
       setCurrentIndex((prev) => Math.max(prev - 1, 0));
       if (isMobile) triggerHapticFeedback();
     }

@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Download, Share2, ZoomIn, ZoomOut, History } from 'lucide-react';
 import CategorySelect from '../components/CategorySelect';
-import { useIntersection } from '@/hooks/use-intersection';
 import ImageCard from '@/components/ImageCard';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
@@ -12,6 +11,7 @@ import { useSwipeNavigation } from '@/hooks/use-swipe-navigation';
 import { useFullscreen } from '@/hooks/use-fullscreen';
 import { useHistory } from '@/hooks/use-history';
 import HistoryDrawer from '@/components/HistoryDrawer';
+import { saveAs } from 'file-saver';
 
 export interface GalleryImage {
   id: string;
@@ -32,19 +32,13 @@ export default function Gallery() {
   const [downloadingIndex, setDownloadingIndex] = useState<number | null>(null);
   const [showUI, setShowUI] = useState(false);
   const loadingRef = useRef(false);
-  const endRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
-  const { currentIndex, setCurrentIndex, x, opacity, onDragEnd } = useSwipeNavigation(images.length);
+  const { currentIndex, setCurrentIndex, x, opacity, onDragEnd } = useSwipeNavigation(images.length, fetchImages);
   const { isFullscreen, toggleFullscreen } = useFullscreen();
   const { historyOpen, setHistoryOpen } = useHistory(images[currentIndex]);
 
-  const isIntersecting = useIntersection(endRef, {
-    root: null,
-    rootMargin: '100px',
-    threshold: 0.1,
-  });
 
   const fetchImages = useCallback(async (initial = false) => {
     if (loadingRef.current) return;
@@ -105,11 +99,6 @@ export default function Gallery() {
     fetchImages(true);
   }, [selectedCategory, fetchImages]);
 
-  useEffect(() => {
-    if (isIntersecting && !loadingRef.current) {
-      fetchImages();
-    }
-  }, [isIntersecting, fetchImages]);
 
   async function fetchImageFromApi(apiSource: string, category: string | null): Promise<GalleryImage | null> {
     const apiEndpoints = {
@@ -150,29 +139,24 @@ export default function Gallery() {
       setDownloadingIndex(index);
       setError(null);
 
-      const response = await fetch(imageUrl, {
-        mode: 'cors',
-        headers: {
-          'Accept': 'image/*'
-        }
-      });
+      const response = await fetch(`/api/download?url=${encodeURIComponent(imageUrl)}`);
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch image: ${response.statusText}`);
+        throw new Error(`Failed to download image: ${response.statusText}`);
       }
 
-      const contentType = response.headers.get('content-type');
-      const extension = contentType?.split('/')[1] || 'jpg';
       const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = url;
-      a.download = `image-${Date.now()}.${extension}`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      const contentDisposition = response.headers.get('content-disposition');
+      let filename = `image-${Date.now()}.jpg`;
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+        if (filenameMatch && filenameMatch.length > 1) {
+          filename = filenameMatch[1];
+        }
+      }
+
+      saveAs(blob, filename);
+
       toast({
         title: "Download Started",
         description: "Your image is downloading.",
@@ -344,7 +328,6 @@ export default function Gallery() {
         <Progress value={(currentIndex + 1) / images.length * 100} className="w-full h-1 mt-4" />
       </div>
 
-      <div ref={endRef} className="h-1 w-1 absolute bottom-0 left-0" />
       <HistoryDrawer open={historyOpen} onOpenChange={setHistoryOpen} />
     </div>
   );

@@ -14,21 +14,23 @@ interface CategorySelectProps {
 
 export default function CategorySelect({ selectedCategory, onCategoryChange }: CategorySelectProps) {
   return (
-    <Select
-      value={selectedCategory || 'all'}
-      onValueChange={(value) => onCategoryChange(value === 'all' ? null : value)}
-    >
-      <SelectTrigger className="w-full md:w-[200px]">
-        <SelectValue placeholder="Select category" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="all">All Categories</SelectItem>
-        {CATEGORIES.map((category) => (
-          <SelectItem key={category} value={category}>
-            {category.charAt(0).toUpperCase() + category.slice(1)}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <div onClick={(e) => e.stopPropagation()}>
+        <Select
+          value={selectedCategory || 'all'}
+          onValueChange={(value) => onCategoryChange(value === 'all' ? null : value)}
+        >
+          <SelectTrigger className="w-full md:w-[200px]">
+            <SelectValue placeholder="Select category" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Categories</SelectItem>
+            {CATEGORIES.map((category) => (
+              <SelectItem key={category} value={category}>
+                {category.charAt(0).toUpperCase() + category.slice(1)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+    </div>
   );
 }
