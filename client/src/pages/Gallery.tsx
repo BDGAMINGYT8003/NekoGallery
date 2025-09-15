@@ -2,8 +2,11 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download } from 'lucide-react';
+import { History } from 'lucide-react';
 import CategorySelect from '../components/CategorySelect';
+import ImageCard from '../components/ImageCard';
+import FullScreenViewer from '../components/FullScreenViewer';
+import HistoryDialog from '../components/HistoryDialog';
 import { useIntersection } from '@/hooks/use-intersection';
 
 export interface GalleryImage {
@@ -22,6 +25,9 @@ export default function Gallery() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [downloadingIndex, setDownloadingIndex] = useState<number | null>(null);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const loadingRef = useRef(false);
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -168,10 +174,15 @@ export default function Gallery() {
           <h1 className="text-5xl font-extrabold mb-6 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
             Neko Gallery
           </h1>
-          <CategorySelect
-            selectedCategory={selectedCategory}
-            onCategoryChange={(category) => setSelectedCategory(category)}
-          />
+          <div className="flex justify-between items-center">
+            <CategorySelect
+              selectedCategory={selectedCategory}
+              onCategoryChange={(category) => setSelectedCategory(category)}
+            />
+            <Button variant="outline" size="icon" onClick={() => setHistoryOpen(true)}>
+              <History className="h-5 w-5" />
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -196,48 +207,17 @@ export default function Gallery() {
         animate="show"
       >
         {images.map((image, index) => (
-          <motion.div
+          <ImageCard
             key={`${image.url}-${index}`}
-            variants={{
-              hidden: { opacity: 0, y: 20 },
-              show: { opacity: 1, y: 0 },
+            image={image}
+            index={index}
+            handleDownload={handleDownload}
+            downloadingIndex={downloadingIndex}
+            onClick={() => {
+              setActiveIndex(index);
+              setViewerOpen(true);
             }}
-          >
-            <Card className="group overflow-hidden">
-              <CardContent className="p-0">
-                <div className="relative w-full">
-                  <img
-                    src={image.url}
-                    alt="Artwork"
-                    className="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-110"
-                    loading="lazy"
-                    onLoad={(e) => {
-                      const img = e.target as HTMLImageElement;
-                      img.style.aspectRatio = `${img.naturalWidth} / ${img.naturalHeight}`;
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <motion.div
-                    className="absolute bottom-4 left-1/2 -translate-x-1/2"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                  >
-                    <Button
-                      variant="default"
-                      size="lg"
-                      className="bg-primary/80 backdrop-blur-sm text-primary-foreground hover:bg-primary"
-                      onClick={() => handleDownload(image.url, index)}
-                      disabled={downloadingIndex === index}
-                    >
-                      <Download className={`w-5 h-5 mr-2 ${downloadingIndex === index ? 'animate-bounce' : ''}`} />
-                      {downloadingIndex === index ? 'Downloading...' : 'Download'}
-                    </Button>
-                  </motion.div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+          />
         ))}
 
         {loading && (
@@ -251,6 +231,28 @@ export default function Gallery() {
       </motion.div>
 
       <div ref={endRef} className="h-4" />
+
+      {viewerOpen && (
+        <FullScreenViewer
+          images={images}
+          activeIndex={activeIndex}
+          onClose={() => setViewerOpen(false)}
+          setActiveIndex={setActiveIndex}
+        />
+      )}
+
+      <HistoryDialog
+        open={historyOpen}
+        onOpenChange={setHistoryOpen}
+        onImageClick={(image) => {
+          const imageIndex = images.findIndex(img => img.url === image.url);
+          if (imageIndex !== -1) {
+            setActiveIndex(imageIndex);
+            setHistoryOpen(false);
+            setViewerOpen(true);
+          }
+        }}
+      />
     </div>
   );
 }
