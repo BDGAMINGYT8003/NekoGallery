@@ -1,12 +1,20 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { motion } from 'framer-motion';
-import { Card, CardContent } from '@/components/ui/card';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Download } from 'lucide-react';
+import { Download, Share2, ZoomIn, ZoomOut, History } from 'lucide-react';
 import CategorySelect from '../components/CategorySelect';
 import { useIntersection } from '@/hooks/use-intersection';
+import ImageCard from '@/components/ImageCard';
+import { useToast } from '@/hooks/use-toast';
+import { Progress } from '@/components/ui/progress';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useSwipeNavigation } from '@/hooks/use-swipe-navigation';
+import { useFullscreen } from '@/hooks/use-fullscreen';
+import { useHistory } from '@/hooks/use-history';
+import HistoryDrawer from '@/components/HistoryDrawer';
 
 export interface GalleryImage {
+  id: string;
   url: string;
   apiSource: string;
   category: string | null;
@@ -22,8 +30,15 @@ export default function Gallery() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [downloadingIndex, setDownloadingIndex] = useState<number | null>(null);
+  const [showUI, setShowUI] = useState(false);
   const loadingRef = useRef(false);
   const endRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
+  const isMobile = useIsMobile();
+
+  const { currentIndex, setCurrentIndex, x, opacity, onDragEnd } = useSwipeNavigation(images.length);
+  const { isFullscreen, toggleFullscreen } = useFullscreen();
+  const { historyOpen, setHistoryOpen } = useHistory(images[currentIndex]);
 
   const isIntersecting = useIntersection(endRef, {
     root: null,
@@ -31,10 +46,10 @@ export default function Gallery() {
     threshold: 0.1,
   });
 
-  const fetchImages = useCallback(async () => {
+  const fetchImages = useCallback(async (initial = false) => {
     if (loadingRef.current) return;
     loadingRef.current = true;
-    setLoading(true);
+    if(!initial) setLoading(true);
 
     try {
       const newImages: GalleryImage[] = [];
@@ -86,11 +101,12 @@ export default function Gallery() {
 
   useEffect(() => {
     setImages([]);
-    fetchImages();
+    setCurrentIndex(0);
+    fetchImages(true);
   }, [selectedCategory, fetchImages]);
 
   useEffect(() => {
-    if (isIntersecting) {
+    if (isIntersecting && !loadingRef.current) {
       fetchImages();
     }
   }, [isIntersecting, fetchImages]);
@@ -113,16 +129,20 @@ export default function Gallery() {
 
     const data = await response.json();
     let imageUrl = '';
+    let id = '';
 
     if (apiSource === 'waifu_pics_api') {
       imageUrl = data.url;
+      id = imageUrl; // Use URL as ID for this specific API as it seems unique
     } else if (apiSource === 'nekos_moe_api' && data.images?.[0]) {
-      imageUrl = `https://nekos.moe/image/${data.images[0].id}.jpg`;
+      id = data.images[0].id;
+      imageUrl = `https://nekos.moe/image/${id}.jpg`;
     } else {
       imageUrl = data.url_japan;
+      id = imageUrl; // Use URL as ID for this specific API as it seems unique
     }
 
-    return imageUrl ? { url: imageUrl, apiSource, category } : null;
+    return imageUrl ? { url: imageUrl, apiSource, category, id } : null;
   }
 
   const handleDownload = async (imageUrl: string, index: number) => {
@@ -153,104 +173,179 @@ export default function Gallery() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
+      toast({
+        title: "Download Started",
+        description: "Your image is downloading.",
+      });
     } catch (error) {
       console.error('Error downloading image:', error);
       setError('Failed to download image. Please try again.');
+      toast({
+        title: "Download Failed",
+        description: "Could not download the image.",
+        variant: "destructive",
+      });
     } finally {
       setDownloadingIndex(null);
     }
   };
 
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'ArrowRight') {
+        setCurrentIndex((prev) => Math.min(prev + 1, images.length - 1));
+      } else if (event.key === 'ArrowLeft') {
+        setCurrentIndex((prev) => Math.max(prev - 1, 0));
+      } else if (event.key === 'f') {
+        toggleFullscreen();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [images.length, setCurrentIndex, toggleFullscreen]);
+
+  useEffect(() => {
+    // Preload next 2 images
+    const preloadNextImages = () => {
+      if (images.length > currentIndex + 1) {
+        const nextImage1 = new Image();
+        nextImage1.src = images[currentIndex + 1].url;
+      }
+      if (images.length > currentIndex + 2) {
+        const nextImage2 = new Image();
+        nextImage2.src = images[currentIndex + 2].url;
+      }
+    };
+    preloadNextImages();
+  }, [currentIndex, images]);
+
+  if (!images.length && loading) {
+    return (
+      <div className="w-screen h-screen flex items-center justify-center bg-background">
+        <div className="w-full h-full bg-muted animate-pulse" />
+      </div>
+    );
+  }
+
+
+  const handleShare = async () => {
+    const image = images[currentIndex];
+    if (navigator.share && image) {
+      try {
+        await navigator.share({
+          title: 'Check out this image!',
+          text: `Here is an image from Neko Gallery.`,
+          url: image.url,
+        });
+        toast({
+            title: "Shared successfully!",
+            description: "The image was shared.",
+        });
+      } catch (error) {
+        console.error('Error sharing:', error);
+        toast({
+            title: "Sharing failed",
+            description: "Could not share the image.",
+            variant: "destructive",
+        });
+      }
+    } else {
+        toast({
+            title: "Sharing not supported",
+            description: "Your browser does not support the Web Share API.",
+            variant: "destructive",
+        });
+    }
+  };
+
+  const currentImage = images[currentIndex];
+
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
-      <Card className="mb-8 bg-card border shadow-lg">
-        <CardContent className="p-6">
-          <h1 className="text-5xl font-extrabold mb-6 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-            Neko Gallery
-          </h1>
-          <CategorySelect
-            selectedCategory={selectedCategory}
-            onCategoryChange={(category) => setSelectedCategory(category)}
-          />
-        </CardContent>
-      </Card>
-
-      {error && (
-        <div className="text-red-500 mb-4 p-4 bg-red-100 rounded-lg">
-          {error}
-        </div>
-      )}
-
-      <motion.div
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
-        variants={{
-          hidden: { opacity: 0 },
-          show: {
-            opacity: 1,
-            transition: {
-              staggerChildren: 0.1,
-            },
-          },
-        }}
-        initial="hidden"
-        animate="show"
-      >
-        {images.map((image, index) => (
+    <div className="w-screen h-screen flex flex-col items-center justify-center bg-black overflow-hidden relative group" onClick={() => isMobile && setShowUI(prev => !prev)}>
+      <AnimatePresence>
+        { (showUI || !isMobile) &&
           <motion.div
-            key={`${image.url}-${index}`}
-            variants={{
-              hidden: { opacity: 0, y: 20 },
-              show: { opacity: 1, y: 0 },
-            }}
-          >
-            <Card className="group overflow-hidden">
-              <CardContent className="p-0">
-                <div className="relative w-full">
-                  <img
-                    src={image.url}
-                    alt="Artwork"
-                    className="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-110"
-                    loading="lazy"
-                    onLoad={(e) => {
-                      const img = e.target as HTMLImageElement;
-                      img.style.aspectRatio = `${img.naturalWidth} / ${img.naturalHeight}`;
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <motion.div
-                    className="absolute bottom-4 left-1/2 -translate-x-1/2"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                  >
-                    <Button
-                      variant="default"
-                      size="lg"
-                      className="bg-primary/80 backdrop-blur-sm text-primary-foreground hover:bg-primary"
-                      onClick={() => handleDownload(image.url, index)}
-                      disabled={downloadingIndex === index}
-                    >
-                      <Download className={`w-5 h-5 mr-2 ${downloadingIndex === index ? 'animate-bounce' : ''}`} />
-                      {downloadingIndex === index ? 'Downloading...' : 'Download'}
-                    </Button>
-                  </motion.div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
-
-        {loading && (
-          Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
-            <div
-              key={`skeleton-${index}`}
-              className="relative w-full aspect-square bg-muted animate-pulse rounded-lg"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="absolute top-4 left-4 z-20">
+            <CategorySelect
+              selectedCategory={selectedCategory}
+              onCategoryChange={(category) => {
+                setSelectedCategory(category);
+              }}
             />
-          ))
-        )}
-      </motion.div>
+          </motion.div>
+        }
+      </AnimatePresence>
+       <AnimatePresence>
+        { (showUI || !isMobile) &&
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="absolute top-4 right-4 z-20 flex gap-2">
+              <Button variant="ghost" size="icon" onClick={() => setHistoryOpen(true)} aria-label="View history">
+                  <History className="h-6 w-6 text-white" />
+              </Button>
+          </motion.div>
+        }
+      </AnimatePresence>
 
-      <div ref={endRef} className="h-4" />
+      <AnimatePresence initial={false}>
+        <motion.div
+          key={currentIndex}
+          drag="x"
+          dragConstraints={{ left: 0, right: 0 }}
+          onDragEnd={onDragEnd}
+          style={{ x, opacity }}
+          className="w-full h-full flex items-center justify-center"
+          initial={{ x: 300, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          exit={{ x: -300, opacity: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          {currentImage && (
+            <ImageCard image={currentImage} />
+          )}
+        </motion.div>
+      </AnimatePresence>
+
+      <div className={`absolute bottom-0 left-0 right-0 p-4 z-10
+                      transition-opacity duration-300
+                      ${isMobile ? (showUI ? 'opacity-100' : 'opacity-0') : 'opacity-0 group-hover:opacity-100'}`}>
+        <div className="flex justify-center items-center gap-4 bg-gradient-to-t from-black/50 to-transparent pt-4">
+            <Button
+                variant="outline"
+                size="lg"
+                className="bg-black/50 text-white border-white/20"
+                onClick={() => currentImage && handleDownload(currentImage.url, currentIndex)}
+                disabled={downloadingIndex === currentIndex}
+            >
+                <Download className="w-5 h-5 mr-2" />
+                {downloadingIndex === currentIndex ? 'Downloading...' : 'Download'}
+            </Button>
+            {navigator.share && (
+                <Button variant="outline" size="icon" className="bg-black/50 text-white border-white/20" onClick={handleShare} aria-label="Share image">
+                    <Share2 className="h-6 w-6" />
+                </Button>
+            )}
+            <Button variant="outline" size="icon" className="bg-black/50 text-white border-white/20" onClick={toggleFullscreen} aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}>
+                {isFullscreen ? <ZoomOut className="h-6 w-6" /> : <ZoomIn className="h-6 w-6" />}
+            </Button>
+        </div>
+        <Progress value={(currentIndex + 1) / images.length * 100} className="w-full h-1 mt-4" />
+      </div>
+
+      <div ref={endRef} className="h-1 w-1 absolute bottom-0 left-0" />
+      <HistoryDrawer open={historyOpen} onOpenChange={setHistoryOpen} />
     </div>
   );
 }

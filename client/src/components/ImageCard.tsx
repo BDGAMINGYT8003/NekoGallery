@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import type { GalleryImage } from '../pages/Gallery';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface ImageCardProps {
   image: GalleryImage;
@@ -39,7 +40,7 @@ export default function ImageCard({ image }: ImageCardProps) {
         style={{ aspectRatio }}
       >
         {isLoading && (
-          <div className="absolute inset-0 bg-muted animate-pulse" />
+          <Skeleton className="absolute inset-0" />
         )}
         
         {error ? (
@@ -50,7 +51,7 @@ export default function ImageCard({ image }: ImageCardProps) {
           <img
             ref={imageRef}
             src={image.url}
-            alt="Gallery"
+            alt={image.category ? `Image from category ${image.category}` : 'Gallery image'}
             className={`w-full h-full object-contain transition-opacity duration-300 ${
               isLoading ? 'opacity-0' : 'opacity-100'
             }`}
