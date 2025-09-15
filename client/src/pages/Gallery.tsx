@@ -35,11 +35,6 @@ export default function Gallery() {
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
-  const { currentIndex, setCurrentIndex, x, opacity, onDragEnd } = useSwipeNavigation(images.length, fetchImages);
-  const { isFullscreen, toggleFullscreen } = useFullscreen();
-  const { historyOpen, setHistoryOpen } = useHistory(images[currentIndex]);
-
-
   const fetchImages = useCallback(async (initial = false) => {
     if (loadingRef.current) return;
     loadingRef.current = true;
@@ -92,6 +87,10 @@ export default function Gallery() {
       loadingRef.current = false;
     }
   }, [selectedCategory]);
+
+  const { currentIndex, setCurrentIndex, x, opacity, onDragEnd } = useSwipeNavigation(images.length, fetchImages);
+  const { isFullscreen, toggleFullscreen } = useFullscreen();
+  const { historyOpen, setHistoryOpen } = useHistory(images[currentIndex]);
 
   useEffect(() => {
     setImages([]);
