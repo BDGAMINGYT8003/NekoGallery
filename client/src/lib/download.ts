@@ -1,31 +1,24 @@
-export const handleDownload = async (imageUrl: string) => {
+export const handleDownload = (imageUrl: string) => {
   try {
-    const response = await fetch(imageUrl, {
-      mode: 'cors',
-      headers: {
-        'Accept': 'image/*'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch image: ${response.statusText}`);
-    }
-
-    const contentType = response.headers.get('content-type');
-    const extension = contentType?.split('/')[1] || 'jpg';
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.style.display = 'none';
-    a.href = url;
-    a.download = `image-${Date.now()}.${extension}`;
+    a.href = imageUrl;
+
+    // To trigger a download, we need to suggest a filename.
+    // We also need to add the link to the DOM before clicking it.
+    const filename = imageUrl.substring(imageUrl.lastIndexOf('/') + 1);
+    a.setAttribute('download', filename);
+
+    // For cross-origin images, the 'download' attribute might not work
+    // without some extra help. We can try setting rel="noopener".
+    a.setAttribute('rel', 'noopener noreferrer');
+    a.setAttribute('target', '_blank'); // Open in a new tab as a fallback
+
     document.body.appendChild(a);
     a.click();
-    window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
   } catch (error) {
     console.error('Error downloading image:', error);
-    // Let the caller handle the error state
     throw error;
   }
 };

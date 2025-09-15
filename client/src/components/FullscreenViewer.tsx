@@ -65,6 +65,12 @@ export default function FullscreenViewer({ image, onClose, onPrev, onNext, open 
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.2 }}
       />
+      <button
+        className="absolute top-8 right-8 text-white/50 hover:text-white"
+        onClick={() => document.exitFullscreen()}
+      >
+        <X size={40} />
+      </button>
     </div>
   );
 }

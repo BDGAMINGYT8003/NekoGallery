@@ -23,11 +23,11 @@ export default function History() {
     loadHistory();
   }, []);
 
-  const handleDownload = async (imageUrl: string) => {
+  const handleDownload = (imageUrl: string) => {
     const index = images.findIndex(img => img.url === imageUrl);
     setDownloadingIndex(index);
     try {
-      await downloadImage(imageUrl);
+      downloadImage(imageUrl);
     } catch (error) {
       // In a real app, you'd show a toast notification here
       console.error('Failed to download image', error);

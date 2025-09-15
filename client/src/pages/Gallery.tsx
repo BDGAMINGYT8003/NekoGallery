@@ -4,10 +4,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { History } from 'lucide-react';
 import CategorySelect from '../components/CategorySelect';
-import { useIntersection } from '@/hooks/use-intersection';
 import GalleryGrid from '../components/GalleryGrid';
 import { handleDownload as downloadImage } from '../lib/download';
 import FullscreenViewer from '../components/FullscreenViewer';
+import { useToast } from '@/hooks/use-toast';
 
 export interface GalleryImage {
   url: string;
@@ -23,10 +23,10 @@ export default function Gallery() {
   const [images, setImages] = useState<GalleryImage[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [downloadingIndex, setDownloadingIndex] = useState<number | null>(null);
   const [fullscreenIndex, setFullscreenIndex] = useState<number | null>(null);
   const loadingRef = useRef(false);
+  const { toast } = useToast();
 
   const fetchImages = useCallback(async () => {
     if (loadingRef.current) return;
@@ -72,9 +72,12 @@ export default function Gallery() {
       }
 
       setImages(prev => [...prev, ...newImages]);
-      setError(null);
     } catch (error) {
-      setError('Failed to load images. Please try again.');
+      toast({
+        title: 'Error',
+        description: 'Failed to load images. Please try again.',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
       loadingRef.current = false;
@@ -116,16 +119,19 @@ export default function Gallery() {
     return imageUrl ? { url: imageUrl, apiSource, category } : null;
   }
 
-  const handleDownload = async (imageUrl: string) => {
+  const handleDownload = (imageUrl: string) => {
     const index = images.findIndex(img => img.url === imageUrl);
     setDownloadingIndex(index);
     try {
-      await downloadImage(imageUrl);
+      downloadImage(imageUrl);
     } catch (error) {
-      setError('Failed to download image. Please try again.');
+      toast({
+        title: 'Error',
+        description: 'Failed to download image. Please try again.',
+        variant: 'destructive',
+      });
     } finally {
       setDownloadingIndex(null);
-      loadingRef.current = false;
     }
   };
 
@@ -149,12 +155,6 @@ export default function Gallery() {
           </div>
         </CardContent>
       </Card>
-
-      {error && (
-        <div className="text-red-500 mb-4 p-4 bg-red-100 rounded-lg">
-          {error}
-        </div>
-      )}
 
       <GalleryGrid
         images={images}
