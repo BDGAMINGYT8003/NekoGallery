@@ -4,11 +4,12 @@ const ASSETS_TO_CACHE = [
   '/index.html',
   '/manifest.json',
   '/vite.svg',
-  // Add other assets like CSS, JS, fonts, icons here
-  // These will be added automatically by the build process in a real app
 ];
 const IMAGE_CACHE_NAME = 'neko-gallery-images-v1';
 const MAX_IMAGES_TO_CACHE = 50;
+const INITIAL_IMAGES_TO_CACHE = 10;
+
+let imageCounter = 0;
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -22,7 +23,6 @@ self.addEventListener('install', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
 
-  // For navigation requests, use a network-first strategy
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
@@ -36,7 +36,6 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // For image requests, use a cache-first, then network strategy
   if (request.destination === 'image') {
     event.respondWith(
       caches.match(request).then((cachedResponse) => {
@@ -45,10 +44,15 @@ self.addEventListener('fetch', (event) => {
         }
 
         return fetch(request).then((networkResponse) => {
-          // Cache the new image
+          if (imageCounter < INITIAL_IMAGES_TO_CACHE) {
+            return caches.open(IMAGE_CACHE_NAME).then((cache) => {
+              cache.put(request, networkResponse.clone());
+              imageCounter++;
+              return networkResponse;
+            });
+          }
+
           return caches.open(IMAGE_CACHE_NAME).then((cache) => {
-            cache.put(request, networkResponse.clone());
-            // Limit the number of cached images
             cache.keys().then((keys) => {
               if (keys.length > MAX_IMAGES_TO_CACHE) {
                 cache.delete(keys[0]);
@@ -62,7 +66,6 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // For other requests (CSS, JS, etc.), use a stale-while-revalidate strategy
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
       const fetchPromise = fetch(request).then((networkResponse) => {

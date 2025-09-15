@@ -1,24 +1,20 @@
 export const handleDownload = (imageUrl: string) => {
   try {
+    const downloadUrl = `/download?url=${encodeURIComponent(imageUrl)}`;
     const a = document.createElement('a');
     a.style.display = 'none';
-    a.href = imageUrl;
+    a.href = downloadUrl;
 
-    // To trigger a download, we need to suggest a filename.
-    // We also need to add the link to the DOM before clicking it.
-    const filename = imageUrl.substring(imageUrl.lastIndexOf('/') + 1);
+    // The 'download' attribute is not strictly necessary when Content-Disposition is set,
+    // but it can be a good fallback. We can suggest a name.
+    const filename = imageUrl.substring(imageUrl.lastIndexOf('/') + 1) || 'image.jpg';
     a.setAttribute('download', filename);
-
-    // For cross-origin images, the 'download' attribute might not work
-    // without some extra help. We can try setting rel="noopener".
-    a.setAttribute('rel', 'noopener noreferrer');
-    a.setAttribute('target', '_blank'); // Open in a new tab as a fallback
 
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
   } catch (error) {
-    console.error('Error downloading image:', error);
+    console.error('Error initiating download:', error);
     throw error;
   }
 };

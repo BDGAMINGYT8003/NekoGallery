@@ -183,6 +183,7 @@ export default function Gallery() {
           if (fullscreenIndex !== null) {
             const newIndex = (fullscreenIndex + 1) % images.length;
             setFullscreenIndex(newIndex);
+            // Note: navigator.vibrate is not supported on iOS.
             if ('vibrate' in navigator) navigator.vibrate(20);
           }
         }}
