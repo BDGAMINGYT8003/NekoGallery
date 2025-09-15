@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
@@ -162,9 +163,9 @@ export default function Gallery() {
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
-      <Card className="mb-8">
+      <Card className="mb-8 bg-card border shadow-lg">
         <CardContent className="p-6">
-          <h1 className="text-3xl font-bold mb-6 bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">
+          <h1 className="text-5xl font-extrabold mb-6 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
             Neko Gallery
           </h1>
           <CategorySelect
@@ -180,38 +181,63 @@ export default function Gallery() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <motion.div
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
+        variants={{
+          hidden: { opacity: 0 },
+          show: {
+            opacity: 1,
+            transition: {
+              staggerChildren: 0.1,
+            },
+          },
+        }}
+        initial="hidden"
+        animate="show"
+      >
         {images.map((image, index) => (
-          <div
+          <motion.div
             key={`${image.url}-${index}`}
-            className="relative w-full group"
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              show: { opacity: 1, y: 0 },
+            }}
           >
-            <div className="relative w-full">
-              <img
-                src={image.url}
-                alt="Artwork"
-                className="w-full h-auto object-contain rounded-lg transition-transform duration-200 group-hover:scale-[1.02]"
-                loading="lazy"
-                onLoad={(e) => {
-                  const img = e.target as HTMLImageElement;
-                  const aspectRatio = img.naturalHeight / img.naturalWidth;
-                  img.style.aspectRatio = `${img.naturalWidth} / ${img.naturalHeight}`;
-                }}
-              />
-              <div className="absolute bottom-0 left-0 right-0 p-2 bg-black/50 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex justify-center rounded-b-lg">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-white hover:text-primary hover:bg-white/20"
-                  onClick={() => handleDownload(image.url, index)}
-                  disabled={downloadingIndex === index}
-                >
-                  <Download className={`w-4 h-4 mr-2 ${downloadingIndex === index ? 'animate-bounce' : ''}`} />
-                  {downloadingIndex === index ? 'Downloading...' : 'Download'}
-                </Button>
-              </div>
-            </div>
-          </div>
+            <Card className="group overflow-hidden">
+              <CardContent className="p-0">
+                <div className="relative w-full">
+                  <img
+                    src={image.url}
+                    alt="Artwork"
+                    className="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-110"
+                    loading="lazy"
+                    onLoad={(e) => {
+                      const img = e.target as HTMLImageElement;
+                      img.style.aspectRatio = `${img.naturalWidth} / ${img.naturalHeight}`;
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <motion.div
+                    className="absolute bottom-4 left-1/2 -translate-x-1/2"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                  >
+                    <Button
+                      variant="default"
+                      size="lg"
+                      className="bg-primary/80 backdrop-blur-sm text-primary-foreground hover:bg-primary"
+                      onClick={() => handleDownload(image.url, index)}
+                      disabled={downloadingIndex === index}
+                    >
+                      <Download className={`w-5 h-5 mr-2 ${downloadingIndex === index ? 'animate-bounce' : ''}`} />
+                      {downloadingIndex === index ? 'Downloading...' : 'Download'}
+                    </Button>
+                  </motion.div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
         ))}
 
         {loading && (
@@ -222,7 +248,7 @@ export default function Gallery() {
             />
           ))
         )}
-      </div>
+      </motion.div>
 
       <div ref={endRef} className="h-4" />
     </div>
