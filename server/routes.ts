@@ -1,51 +1,71 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import http from 'http';
 import https from 'https';
 import path from 'path';
 import { parse } from 'url';
+import { storage } from "./storage";
+
+const getRequestClient = (protocol: string | null) => {
+  if (protocol === 'https:') {
+    return https;
+  }
+  return http;
+}
 
 export function registerRoutes(app: Express): Server {
-  // put application routes here
-  // prefix all routes with /api
-
-  app.get('/download', async (req, res) => {
+  app.get('/download', (req, res) => {
     const imageUrl = req.query.url as string;
-
     if (!imageUrl) {
       return res.status(400).send('Image URL is required');
     }
 
-    try {
-      https.get(imageUrl, (imageResponse) => {
-        if (imageResponse.statusCode !== 200) {
-          res.status(imageResponse.statusCode || 500).send('Failed to download image');
-          return;
-        }
+    const parsedUrl = parse(imageUrl);
+    const client = getRequestClient(parsedUrl.protocol);
 
-        const parsedUrl = parse(imageUrl);
-        const filename = path.basename(parsedUrl.pathname || 'image.jpg');
+    const request = client.get(imageUrl, (imageResponse) => {
+      if (imageResponse.statusCode && imageResponse.statusCode >= 300 && imageResponse.statusCode < 400 && imageResponse.headers.location) {
+        const redirectUrl = imageResponse.headers.location;
+        const redirectParsedUrl = parse(redirectUrl);
+        const redirectClient = getRequestClient(redirectParsedUrl.protocol);
 
-        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-        if (imageResponse.headers['content-type']) {
-          res.setHeader('Content-Type', imageResponse.headers['content-type']);
-        }
+        redirectClient.get(redirectUrl, (redirectResponse) => {
+          if (redirectResponse.statusCode !== 200) {
+            return res.status(redirectResponse.statusCode || 500).send('Failed to download image after redirect.');
+          }
+          const filename = path.basename(redirectParsedUrl.pathname || 'image.jpg');
+          res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+          if (redirectResponse.headers['content-type']) {
+            res.setHeader('Content-Type', redirectResponse.headers['content-type']);
+          }
+          redirectResponse.pipe(res);
+        }).on('error', (err) => {
+          console.error('Error during redirect download:', err.message);
+          res.status(500).send('Failed to download image.');
+        });
+        return;
+      }
 
-        imageResponse.pipe(res);
-      }).on('error', (error) => {
-        console.error('Error proxying download:', error);
-        res.status(500).send('Failed to download image');
-      });
-    } catch (error) {
-      console.error('Error proxying download:', error);
-      res.status(500).send('Failed to download image');
-    }
+      if (imageResponse.statusCode !== 200) {
+        return res.status(imageResponse.statusCode || 500).send('Failed to download image.');
+      }
+
+      const filename = path.basename(parsedUrl.pathname || 'image.jpg');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      if (imageResponse.headers['content-type']) {
+        res.setHeader('Content-Type', imageResponse.headers['content-type']);
+      }
+      imageResponse.pipe(res);
+    });
+
+    request.on('error', (err) => {
+      console.error('Error proxying download:', err.message);
+      if (!res.headersSent) {
+        res.status(500).send('Failed to download image.');
+      }
+    });
   });
 
-  // use storage to perform CRUD operations on the storage interface
-  // e.g. storage.insertUser(user) or storage.getUserByUsername(username)
-
   const httpServer = createServer(app);
-
   return httpServer;
 }
