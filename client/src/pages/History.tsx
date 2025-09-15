@@ -55,7 +55,7 @@ export default function History() {
           loading={loading}
           onDownload={handleDownload}
           downloadingIndex={downloadingIndex}
-          onImageClick={(image) => {
+          onImageFullscreen={(image) => {
             const index = images.findIndex(img => img.url === image.url);
             setFullscreenIndex(index);
           }}

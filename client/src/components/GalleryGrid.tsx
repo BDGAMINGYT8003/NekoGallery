@@ -10,7 +10,7 @@ interface GalleryGridProps {
   loading: boolean;
   onDownload: (imageUrl: string) => void;
   downloadingIndex: number | null;
-  onImageClick: (image: GalleryImage) => void;
+  onImageFullscreen: (image: GalleryImage) => void;
   onLoadMore: () => void;
 }
 
@@ -19,7 +19,7 @@ export default function GalleryGrid({
   loading,
   onDownload,
   downloadingIndex,
-  onImageClick,
+  onImageFullscreen,
   onLoadMore,
 }: GalleryGridProps) {
   const endRef = useRef<HTMLDivElement>(null);
@@ -57,7 +57,7 @@ export default function GalleryGrid({
             image={image}
             onDownload={() => onDownload(image.url)}
             isDownloading={downloadingIndex === index}
-            onClick={() => onImageClick(image)}
+            onFullscreen={() => onImageFullscreen(image)}
           />
         ))}
 

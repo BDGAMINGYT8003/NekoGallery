@@ -136,15 +136,17 @@ export default function Gallery() {
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-6 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent text-center whitespace-nowrap">
             Neko Gallery
           </h1>
-          <CategorySelect
-            selectedCategory={selectedCategory}
-            onCategoryChange={(category) => setSelectedCategory(category)}
-          />
-          <Button asChild variant="ghost" size="icon" className="absolute top-4 right-4">
-            <Link to="/history">
-              <History />
-            </Link>
-          </Button>
+          <div className="flex justify-center items-center gap-4">
+            <CategorySelect
+              selectedCategory={selectedCategory}
+              onCategoryChange={(category) => setSelectedCategory(category)}
+            />
+            <Button asChild variant="ghost" size="icon">
+              <Link to="/history">
+                <History />
+              </Link>
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -159,7 +161,7 @@ export default function Gallery() {
         loading={loading}
         onDownload={handleDownload}
         downloadingIndex={downloadingIndex}
-        onImageClick={(image) => {
+        onImageFullscreen={(image) => {
           const index = images.findIndex(img => img.url === image.url);
           setFullscreenIndex(index);
         }}
@@ -167,17 +169,20 @@ export default function Gallery() {
       />
 
       <FullscreenViewer
+        open={fullscreenIndex !== null}
         image={fullscreenIndex !== null ? images[fullscreenIndex] : null}
         onClose={() => setFullscreenIndex(null)}
         onPrev={() => {
           if (fullscreenIndex !== null) {
-            setFullscreenIndex((fullscreenIndex - 1 + images.length) % images.length);
+            const newIndex = (fullscreenIndex - 1 + images.length) % images.length;
+            setFullscreenIndex(newIndex);
             if ('vibrate' in navigator) navigator.vibrate(20);
           }
         }}
         onNext={() => {
           if (fullscreenIndex !== null) {
-            setFullscreenIndex((fullscreenIndex + 1) % images.length);
+            const newIndex = (fullscreenIndex + 1) % images.length;
+            setFullscreenIndex(newIndex);
             if ('vibrate' in navigator) navigator.vibrate(20);
           }
         }}

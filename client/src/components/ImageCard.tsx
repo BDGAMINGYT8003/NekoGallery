@@ -2,17 +2,17 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download } from 'lucide-react';
+import { Download, Expand } from 'lucide-react';
 import type { GalleryImage } from '../pages/Gallery';
 
 interface ImageCardProps {
   image: GalleryImage;
   onDownload: (imageUrl: string) => void;
   isDownloading: boolean;
-  onClick: () => void;
+  onFullscreen: () => void;
 }
 
-export default function ImageCard({ image, onDownload, isDownloading, onClick }: ImageCardProps) {
+export default function ImageCard({ image, onDownload, isDownloading, onFullscreen }: ImageCardProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   return (
@@ -23,7 +23,7 @@ export default function ImageCard({ image, onDownload, isDownloading, onClick }:
       }}
       className="relative"
     >
-      <Card className="group overflow-hidden" onClick={onClick}>
+      <Card className="group overflow-hidden">
         <CardContent className="p-0">
           <div className="relative w-full">
             {isLoading && (
@@ -40,27 +40,31 @@ export default function ImageCard({ image, onDownload, isDownloading, onClick }:
                 setIsLoading(false);
               }}
             />
-            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <motion.div
-              className="absolute bottom-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-              initial={{ y: 20 }}
-              animate={{ y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
+            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-4">
               <Button
-                variant="default"
-                size="lg"
-                className="bg-primary/80 backdrop-blur-sm text-primary-foreground hover:bg-primary"
+                variant="ghost"
+                size="icon"
+                className="text-white hover:bg-white/20 hover:text-white"
                 onClick={(e) => {
-                  e.stopPropagation(); // prevent opening the fullscreen viewer
+                  e.stopPropagation();
                   onDownload(image.url);
                 }}
                 disabled={isDownloading}
               >
-                <Download className={`w-5 h-5 mr-2 ${isDownloading ? 'animate-bounce' : ''}`} />
-                {isDownloading ? 'Downloading...' : 'Download'}
+                <Download className="w-6 h-6" />
               </Button>
-            </motion.div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-white hover:bg-white/20 hover:text-white"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onFullscreen();
+                }}
+              >
+                <Expand className="w-6 h-6" />
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
