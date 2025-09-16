@@ -18,7 +18,7 @@ export default function CategorySelect({ selectedCategory, onCategoryChange }: C
       value={selectedCategory || 'all'}
       onValueChange={(value) => onCategoryChange(value === 'all' ? null : value)}
     >
-      <SelectTrigger className="w-[180px] md:w-[240px]">
+      <SelectTrigger className="w-full md:w-[200px]">
         <SelectValue placeholder="Select category" />
       </SelectTrigger>
       <SelectContent>
