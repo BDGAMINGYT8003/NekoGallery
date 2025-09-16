@@ -4,7 +4,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { History } from 'lucide-react';
 import CategorySelect from '../components/CategorySelect';
-import { useIntersection } from '@/hooks/use-intersection';
 import GalleryGrid from '../components/GalleryGrid';
 
 export interface GalleryImage {
@@ -67,9 +66,8 @@ export default function Gallery() {
       }
 
       setImages(prev => [...prev, ...newImages]);
-      setError(null);
     } catch (error) {
-      setError('Failed to load images. Please try again.');
+      console.error('Failed to load images.', error);
     } finally {
       setLoading(false);
       loadingRef.current = false;
@@ -92,7 +90,7 @@ export default function Gallery() {
       ? `${apiEndpoints.waifu_pics_api}${category.replace('waifu_', '')}`
       : category
         ? `${apiEndpoints[apiSource as keyof typeof apiEndpoints]}${category}`
-        : apiEndpoints[apiSource as keyof typeof apiEndpoints];
+        : apiEndpoints[source as keyof typeof apiEndpoints];
 
     const response = await fetch(endpoint);
     if (!response.ok) return null;
@@ -115,21 +113,19 @@ export default function Gallery() {
     <div className="min-h-screen bg-background p-4 md:p-8">
       <Card className="mb-8 bg-card border shadow-lg">
         <CardContent className="p-6">
-          <div className="flex justify-between items-center">
-            <h1 className="text-5xl font-extrabold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              Neko Gallery
-            </h1>
+          <h1 className="text-5xl font-extrabold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent text-center whitespace-nowrap">
+            Neko Gallery
+          </h1>
+          <div className="flex justify-center items-center gap-2">
+            <CategorySelect
+              selectedCategory={selectedCategory}
+              onCategoryChange={(category) => setSelectedCategory(category)}
+            />
             <Button asChild variant="ghost" size="icon">
               <Link to="/history">
                 <History />
               </Link>
             </Button>
-          </div>
-          <div className="mt-4">
-            <CategorySelect
-              selectedCategory={selectedCategory}
-              onCategoryChange={(category) => setSelectedCategory(category)}
-            />
           </div>
         </CardContent>
       </Card>

@@ -26,22 +26,24 @@ export default function History() {
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
-      <div className="flex justify-between items-center mb-8">
-        <div className="flex items-center">
+      <div className="relative flex justify-center items-center mb-8">
+        <div className="absolute left-0">
           <Button asChild variant="ghost" size="icon">
             <Link to="/">
               <ArrowLeft />
             </Link>
           </Button>
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold ml-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-            Recently Viewed
-          </h1>
         </div>
-        {images.length > 0 && (
-          <Button variant="destructive" onClick={handleClearHistory}>
-            <Trash2 className="mr-2 h-4 w-4" /> Clear History
-          </Button>
-        )}
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent whitespace-nowrap">
+          Recently Viewed
+        </h1>
+        <div className="absolute right-0">
+          {images.length > 0 && (
+            <Button variant="destructive" onClick={handleClearHistory}>
+              <Trash2 className="mr-2 h-4 w-4" /> Clear History
+            </Button>
+          )}
+        </div>
       </div>
 
       {images.length > 0 ? (
