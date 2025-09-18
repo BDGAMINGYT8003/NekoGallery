@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { Link } from 'wouter';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download } from 'lucide-react';
+import { History } from 'lucide-react';
 import CategorySelect from '../components/CategorySelect';
-import { useIntersection } from '@/hooks/use-intersection';
+import GalleryGrid from '../components/GalleryGrid';
 
 export interface GalleryImage {
   url: string;
@@ -19,16 +20,7 @@ export default function Gallery() {
   const [images, setImages] = useState<GalleryImage[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [downloadingIndex, setDownloadingIndex] = useState<number | null>(null);
   const loadingRef = useRef(false);
-  const endRef = useRef<HTMLDivElement>(null);
-
-  const isIntersecting = useIntersection(endRef, {
-    root: null,
-    rootMargin: '100px',
-    threshold: 0.1,
-  });
 
   const fetchImages = useCallback(async () => {
     if (loadingRef.current) return;
@@ -74,9 +66,8 @@ export default function Gallery() {
       }
 
       setImages(prev => [...prev, ...newImages]);
-      setError(null);
     } catch (error) {
-      setError('Failed to load images. Please try again.');
+      console.error('Failed to load images.', error);
     } finally {
       setLoading(false);
       loadingRef.current = false;
@@ -87,12 +78,6 @@ export default function Gallery() {
     setImages([]);
     fetchImages();
   }, [selectedCategory, fetchImages]);
-
-  useEffect(() => {
-    if (isIntersecting) {
-      fetchImages();
-    }
-  }, [isIntersecting, fetchImages]);
 
   async function fetchImageFromApi(apiSource: string, category: string | null): Promise<GalleryImage | null> {
     const apiEndpoints = {
@@ -105,7 +90,7 @@ export default function Gallery() {
       ? `${apiEndpoints.waifu_pics_api}${category.replace('waifu_', '')}`
       : category
         ? `${apiEndpoints[apiSource as keyof typeof apiEndpoints]}${category}`
-        : apiEndpoints[apiSource as keyof typeof apiEndpoints];
+        : apiEndpoints[source as keyof typeof apiEndpoints];
 
     const response = await fetch(endpoint);
     if (!response.ok) return null;
@@ -124,107 +109,28 @@ export default function Gallery() {
     return imageUrl ? { url: imageUrl, apiSource, category } : null;
   }
 
-  const handleDownload = async (imageUrl: string, index: number) => {
-    try {
-      setDownloadingIndex(index);
-      setError(null);
-
-      const response = await fetch(imageUrl, {
-        mode: 'cors',
-        headers: {
-          'Accept': 'image/*'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch image: ${response.statusText}`);
-      }
-
-      const contentType = response.headers.get('content-type');
-      const extension = contentType?.split('/')[1] || 'jpg';
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = url;
-      a.download = `image-${Date.now()}.${extension}`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (error) {
-      console.error('Error downloading image:', error);
-      setError('Failed to download image. Please try again.');
-    } finally {
-      setDownloadingIndex(null);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
-      <Card className="mb-8">
+      <Card className="mb-8 bg-card border shadow-lg">
         <CardContent className="p-6">
-          <h1 className="text-3xl font-bold mb-6 bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">
+          <h1 className="text-5xl font-extrabold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent text-center whitespace-nowrap">
             Neko Gallery
           </h1>
-          <CategorySelect
-            selectedCategory={selectedCategory}
-            onCategoryChange={(category) => setSelectedCategory(category)}
-          />
+          <div className="flex justify-center items-center gap-2">
+            <CategorySelect
+              selectedCategory={selectedCategory}
+              onCategoryChange={(category) => setSelectedCategory(category)}
+            />
+            <Button asChild variant="ghost" size="icon">
+              <Link to="/history">
+                <History />
+              </Link>
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
-      {error && (
-        <div className="text-red-500 mb-4 p-4 bg-red-100 rounded-lg">
-          {error}
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {images.map((image, index) => (
-          <div
-            key={`${image.url}-${index}`}
-            className="relative w-full group"
-          >
-            <div className="relative w-full">
-              <img
-                src={image.url}
-                alt="Artwork"
-                className="w-full h-auto object-contain rounded-lg transition-transform duration-200 group-hover:scale-[1.02]"
-                loading="lazy"
-                onLoad={(e) => {
-                  const img = e.target as HTMLImageElement;
-                  const aspectRatio = img.naturalHeight / img.naturalWidth;
-                  img.style.aspectRatio = `${img.naturalWidth} / ${img.naturalHeight}`;
-                }}
-              />
-              <div className="absolute bottom-0 left-0 right-0 p-2 bg-black/50 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex justify-center rounded-b-lg">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-white hover:text-primary hover:bg-white/20"
-                  onClick={() => handleDownload(image.url, index)}
-                  disabled={downloadingIndex === index}
-                >
-                  <Download className={`w-4 h-4 mr-2 ${downloadingIndex === index ? 'animate-bounce' : ''}`} />
-                  {downloadingIndex === index ? 'Downloading...' : 'Download'}
-                </Button>
-              </div>
-            </div>
-          </div>
-        ))}
-
-        {loading && (
-          Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
-            <div
-              key={`skeleton-${index}`}
-              className="relative w-full aspect-square bg-muted animate-pulse rounded-lg"
-            />
-          ))
-        )}
-      </div>
-
-      <div ref={endRef} className="h-4" />
+      <GalleryGrid images={images} loading={loading} onLoadMore={fetchImages} />
     </div>
   );
 }
