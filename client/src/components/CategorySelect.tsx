@@ -24,10 +24,10 @@ export default function CategorySelect({ selectedCategory, onCategoryChange }: C
         <SelectTrigger className="w-full bg-surface-container-high border-border/60 rounded-lg pl-10 transition-colors focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background">
           <SelectValue placeholder="Select a category..." />
         </SelectTrigger>
-        <SelectContent className="bg-surface-container-high border-border/60 rounded-xl">
+        <SelectContent className="bg-surface-container-high border-border/60 rounded-xl p-1">
           <SelectItem value="all">All Categories</SelectItem>
           {CATEGORIES.map((category) => (
-            <SelectItem key={category} value={category} className="rounded-md">
+            <SelectItem key={category} value={category}>
               {category.charAt(0).toUpperCase() + category.slice(1)}
             </SelectItem>
           ))}

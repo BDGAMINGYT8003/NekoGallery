@@ -130,15 +130,11 @@ export default function Gallery() {
       setDownloadingIndex(index);
       setError(null);
 
-      const response = await fetch(imageUrl, {
-        mode: 'cors',
-        headers: {
-          'Accept': 'image/*'
-        }
-      });
+      // Use the new backend proxy endpoint for downloading
+      const response = await fetch(`/api/download?url=${encodeURIComponent(imageUrl)}`);
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch image: ${response.statusText}`);
+        throw new Error(`Failed to download image: ${response.statusText}`);
       }
 
       const contentType = response.headers.get('content-type');
@@ -195,7 +191,6 @@ export default function Gallery() {
                 Neko Gallery
               </h1>
             </div>
-            <p className="text-body-lg text-muted-foreground mt-2">An expressive gallery built with Material 3.</p>
             <div className="mt-6">
               <CategorySelect
                 selectedCategory={selectedCategory}
