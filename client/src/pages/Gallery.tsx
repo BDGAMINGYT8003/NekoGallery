@@ -99,27 +99,31 @@ export default function Gallery() {
     const apiEndpoints = {
       nsfw_api: 'https://api.n-sfw.com/nsfw/',
       waifu_pics_api: 'https://api.waifu.pics/nsfw/',
-      nekos_moe_api: 'https://nekos.moe/api/v1/random/image'
+      nekos_moe_api: 'https://api.nekosapi.com/v4/images/random/file' // Updated API endpoint
     };
 
     const endpoint = category?.startsWith('waifu_')
       ? `${apiEndpoints.waifu_pics_api}${category.replace('waifu_', '')}`
-      : category
-        ? `${apiEndpoints[apiSource as keyof typeof apiEndpoints]}${category}`
+      : (apiSource === 'nsfw_api' && category)
+        ? `${apiEndpoints.nsfw_api}${category}`
         : apiEndpoints[apiSource as keyof typeof apiEndpoints];
 
     const response = await fetch(endpoint);
     if (!response.ok) return null;
 
-    const data = await response.json();
     let imageUrl = '';
 
-    if (apiSource === 'waifu_pics_api') {
-      imageUrl = data.url;
-    } else if (apiSource === 'nekos_moe_api' && data.images?.[0]) {
-      imageUrl = `https://nekos.moe/image/${data.images[0].id}.jpg`;
+    if (apiSource === 'nekos_moe_api') {
+      // This endpoint redirects to the image file, so the response URL is the direct link
+      imageUrl = response.url;
     } else {
-      imageUrl = data.url_japan;
+      // The other APIs return JSON
+      const data = await response.json();
+      if (apiSource === 'waifu_pics_api') {
+        imageUrl = data.url;
+      } else if (apiSource === 'nsfw_api') {
+        imageUrl = data.url; // Use the correct 'url' field
+      }
     }
 
     return imageUrl ? { url: imageUrl, apiSource, category } : null;
