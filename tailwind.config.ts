@@ -6,13 +6,23 @@ export default {
   theme: {
     extend: {
       borderRadius: {
+        xl: "calc(var(--radius) + 0.5rem)",
         lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        md: "calc(var(--radius) - 0.5rem)",
+        sm: "calc(var(--radius) - 0.75rem)",
+        full: "9999px",
       },
       colors: {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        "surface-dim": "hsl(var(--surface-dim))",
+        "surface": "hsl(var(--surface))",
+        "surface-bright": "hsl(var(--surface-bright))",
+        "surface-container-lowest": "hsl(var(--surface-container-lowest))",
+        "surface-container-low": "hsl(var(--surface-container-low))",
+        "surface-container": "hsl(var(--surface-container))",
+        "surface-container-high": "hsl(var(--surface-container-high))",
+        "surface-container-highest": "hsl(var(--surface-container-highest))",
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
@@ -28,6 +38,10 @@ export default {
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
           foreground: "hsl(var(--secondary-foreground))",
+        },
+        tertiary: {
+          DEFAULT: "hsl(var(--tertiary))",
+          foreground: "hsl(var(--tertiary-foreground))",
         },
         muted: {
           DEFAULT: "hsl(var(--muted))",
@@ -83,6 +97,23 @@ export default {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+      },
+      fontSize: {
+        'display-lg': ['3.5625rem', { lineHeight: '4rem', fontWeight: '700' }],
+        'display-md': ['2.8125rem', { lineHeight: '3.25rem', fontWeight: '700' }],
+        'display-sm': ['2.25rem', { lineHeight: '2.75rem', fontWeight: '700' }],
+        'headline-lg': ['2rem', { lineHeight: '2.5rem', fontWeight: '700' }],
+        'headline-md': ['1.75rem', { lineHeight: '2.25rem', fontWeight: '700' }],
+        'headline-sm': ['1.5rem', { lineHeight: '2rem', fontWeight: '700' }],
+        'title-lg': ['1.375rem', { lineHeight: '1.75rem', fontWeight: '700' }],
+        'title-md': ['1rem', { lineHeight: '1.5rem', fontWeight: '600' }],
+        'title-sm': ['0.875rem', { lineHeight: '1.25rem', fontWeight: '600' }],
+        'body-lg': ['1rem', { lineHeight: '1.5rem', fontWeight: '400' }],
+        'body-md': ['0.875rem', { lineHeight: '1.25rem', fontWeight: '400' }],
+        'body-sm': ['0.75rem', { lineHeight: '1rem', fontWeight: '400' }],
+        'label-lg': ['0.875rem', { lineHeight: '1.25rem', fontWeight: '500' }],
+        'label-md': ['0.75rem', { lineHeight: '1rem', fontWeight: '500' }],
+        'label-sm': ['0.6875rem', { lineHeight: '1rem', fontWeight: '500' }],
       },
     },
   },

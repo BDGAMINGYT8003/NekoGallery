@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download } from 'lucide-react';
+import { Download, GalleryVerticalEnd } from 'lucide-react';
 import CategorySelect from '../components/CategorySelect';
 import { useIntersection } from '@/hooks/use-intersection';
+import { motion } from 'framer-motion';
 
 export interface GalleryImage {
   url: string;
@@ -26,7 +27,7 @@ export default function Gallery() {
 
   const isIntersecting = useIntersection(endRef, {
     root: null,
-    rootMargin: '100px',
+    rootMargin: '200px',
     threshold: 0.1,
   });
 
@@ -160,49 +161,85 @@ export default function Gallery() {
     }
   };
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.05,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        type: 'spring',
+        stiffness: 100,
+        damping: 10,
+      },
+    },
+  };
+
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
-      <Card className="mb-8">
-        <CardContent className="p-6">
-          <h1 className="text-3xl font-bold mb-6 bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">
-            Neko Gallery
-          </h1>
-          <CategorySelect
-            selectedCategory={selectedCategory}
-            onCategoryChange={(category) => setSelectedCategory(category)}
-          />
-        </CardContent>
-      </Card>
+    <div className="min-h-screen bg-background p-4 sm:p-6 md:p-8">
+      <header className="mb-8">
+        <Card className="bg-surface-container border-border/50 rounded-xl shadow-lg">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <GalleryVerticalEnd className="w-8 h-8 text-primary" />
+              <h1 className="text-display-sm bg-gradient-to-r from-primary via-tertiary to-secondary bg-clip-text text-transparent">
+                Neko Gallery
+              </h1>
+            </div>
+            <p className="text-body-lg text-muted-foreground mt-2">An expressive gallery built with Material 3.</p>
+            <div className="mt-6">
+              <CategorySelect
+                selectedCategory={selectedCategory}
+                onCategoryChange={(category) => setSelectedCategory(category)}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </header>
 
       {error && (
-        <div className="text-red-500 mb-4 p-4 bg-red-100 rounded-lg">
+        <div className="mb-4 p-4 bg-destructive/20 text-destructive-foreground rounded-lg border border-destructive/50">
           {error}
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <motion.div
+        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
         {images.map((image, index) => (
-          <div
-            key={`${image.url}-${index}`}
-            className="relative w-full group"
-          >
-            <div className="relative w-full">
+          <motion.div key={`${image.url}-${index}`} variants={itemVariants}>
+            <Card className="group relative w-full overflow-hidden rounded-lg bg-surface-container-low border-border/50 shadow-md transition-all duration-300 ease-in-out hover:shadow-xl hover:border-primary/50">
               <img
                 src={image.url}
                 alt="Artwork"
-                className="w-full h-auto object-contain rounded-lg transition-transform duration-200 group-hover:scale-[1.02]"
+                className="w-full h-auto object-contain transition-transform duration-300 ease-in-out group-hover:scale-105"
                 loading="lazy"
                 onLoad={(e) => {
                   const img = e.target as HTMLImageElement;
-                  const aspectRatio = img.naturalHeight / img.naturalWidth;
-                  img.style.aspectRatio = `${img.naturalWidth} / ${img.naturalHeight}`;
+                  // Only set aspect ratio if it hasn't been set, to avoid flicker
+                  if (!img.style.aspectRatio) {
+                    img.style.aspectRatio = `${img.naturalWidth} / ${img.naturalHeight}`;
+                  }
                 }}
               />
-              <div className="absolute bottom-0 left-0 right-0 p-2 bg-black/50 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex justify-center rounded-b-lg">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="absolute bottom-0 left-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex justify-center">
                 <Button
-                  variant="ghost"
+                  variant="secondary"
                   size="sm"
-                  className="text-white hover:text-primary hover:bg-white/20"
+                  className="w-full text-label-lg"
                   onClick={() => handleDownload(image.url, index)}
                   disabled={downloadingIndex === index}
                 >
@@ -210,19 +247,19 @@ export default function Gallery() {
                   {downloadingIndex === index ? 'Downloading...' : 'Download'}
                 </Button>
               </div>
-            </div>
-          </div>
+            </Card>
+          </motion.div>
         ))}
 
-        {loading && (
+        {loading &&
           Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
-            <div
+            <Card
               key={`skeleton-${index}`}
-              className="relative w-full aspect-square bg-muted animate-pulse rounded-lg"
+              className="w-full bg-surface-container-low border-border/50 rounded-lg shadow-md animate-pulse"
+              style={{ aspectRatio: '1 / 1.2' }} // Skeletons can have a fixed aspect ratio
             />
-          ))
-        )}
-      </div>
+          ))}
+      </motion.div>
 
       <div ref={endRef} className="h-4" />
     </div>
