@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 import CategorySelect from '../components/CategorySelect';
 import { useIntersection } from '@/hooks/use-intersection';
+import { useToast } from '@/hooks/use-toast';
 
 export interface GalleryImage {
   url: string;
@@ -16,10 +18,10 @@ export interface GalleryImage {
 const ITEMS_PER_PAGE = 10;
 
 export default function Gallery() {
+  const { toast } = useToast();
   const [images, setImages] = useState<GalleryImage[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [downloadingIndex, setDownloadingIndex] = useState<number | null>(null);
   const loadingRef = useRef(false);
   const endRef = useRef<HTMLDivElement>(null);
@@ -74,9 +76,12 @@ export default function Gallery() {
       }
 
       setImages(prev => [...prev, ...newImages]);
-      setError(null);
     } catch (error) {
-      setError('Failed to load images. Please try again.');
+      toast({
+        variant: "destructive",
+        title: "Error fetching images",
+        description: "There was a problem fetching new images. Please try again later.",
+      });
     } finally {
       setLoading(false);
       loadingRef.current = false;
@@ -127,7 +132,6 @@ export default function Gallery() {
   const handleDownload = async (imageUrl: string, index: number) => {
     try {
       setDownloadingIndex(index);
-      setError(null);
 
       const response = await fetch(imageUrl, {
         mode: 'cors',
@@ -154,77 +158,128 @@ export default function Gallery() {
       document.body.removeChild(a);
     } catch (error) {
       console.error('Error downloading image:', error);
-      setError('Failed to download image. Please try again.');
+      toast({
+        variant: "destructive",
+        title: "Error downloading image",
+        description: "There was a problem downloading the image. Please try again later.",
+      });
     } finally {
       setDownloadingIndex(null);
     }
   };
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 10,
+      },
+    },
+  };
+
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
-      <Card className="mb-8">
-        <CardContent className="p-6">
-          <h1 className="text-3xl font-bold mb-6 bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">
-            Neko Gallery
-          </h1>
-          <CategorySelect
-            selectedCategory={selectedCategory}
-            onCategoryChange={(category) => setSelectedCategory(category)}
-          />
-        </CardContent>
-      </Card>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="min-h-screen bg-background p-4 md:p-8 antialiased"
+    >
+      <motion.header
+        initial={{ y: -50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ type: "spring", stiffness: 100, damping: 15, delay: 0.2 }}
+        className="mb-12 text-center"
+      >
+        <h1 className="text-5xl md:text-7xl font-bold tracking-tighter mb-4 bg-gradient-to-r from-primary via-blue-400 to-blue-500 bg-clip-text text-transparent">
+          Neko Gallery
+        </h1>
+        <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
+          An expressive gallery built with Material 3.
+        </p>
+      </motion.header>
 
-      {error && (
-        <div className="text-red-500 mb-4 p-4 bg-red-100 rounded-lg">
-          {error}
-        </div>
-      )}
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ type: "spring", stiffness: 100, damping: 15, delay: 0.4 }}
+        className="mb-8 max-w-md mx-auto"
+      >
+        <CategorySelect
+          selectedCategory={selectedCategory}
+          onCategoryChange={(category) => setSelectedCategory(category)}
+        />
+      </motion.div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
+      >
         {images.map((image, index) => (
-          <div
+          <motion.div
             key={`${image.url}-${index}`}
-            className="relative w-full group"
+            variants={itemVariants}
           >
-            <div className="relative w-full">
-              <img
-                src={image.url}
-                alt="Artwork"
-                className="w-full h-auto object-contain rounded-lg transition-transform duration-200 group-hover:scale-[1.02]"
-                loading="lazy"
-                onLoad={(e) => {
-                  const img = e.target as HTMLImageElement;
-                  const aspectRatio = img.naturalHeight / img.naturalWidth;
-                  img.style.aspectRatio = `${img.naturalWidth} / ${img.naturalHeight}`;
-                }}
-              />
-              <div className="absolute bottom-0 left-0 right-0 p-2 bg-black/50 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex justify-center rounded-b-lg">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-white hover:text-primary hover:bg-white/20"
-                  onClick={() => handleDownload(image.url, index)}
-                  disabled={downloadingIndex === index}
-                >
-                  <Download className={`w-4 h-4 mr-2 ${downloadingIndex === index ? 'animate-bounce' : ''}`} />
-                  {downloadingIndex === index ? 'Downloading...' : 'Download'}
-                </Button>
-              </div>
-            </div>
-          </div>
+            <Card
+              className="group overflow-hidden rounded-2xl border-none shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20"
+            >
+              <CardContent className="p-0">
+                <img
+                  src={image.url}
+                  alt="Artwork"
+                  className="w-full h-auto object-cover transition-transform duration-300"
+                  loading="lazy"
+                  onLoad={(e) => {
+                    const img = e.target as HTMLImageElement;
+                    img.style.aspectRatio = `${img.naturalWidth} / ${img.naturalHeight}`;
+                  }}
+                />
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <Button
+                    variant="default"
+                    size="lg"
+                    className="rounded-full h-14 w-14 p-0 bg-primary/80 backdrop-blur-sm text-primary-foreground hover:bg-primary"
+                    onClick={() => handleDownload(image.url, index)}
+                    disabled={downloadingIndex === index}
+                  >
+                    {downloadingIndex === index ? (
+                      <div className="w-6 h-6 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Download className="w-6 h-6" />
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
         ))}
 
         {loading && (
           Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
             <div
               key={`skeleton-${index}`}
-              className="relative w-full aspect-square bg-muted animate-pulse rounded-lg"
+              className="relative w-full aspect-square bg-muted/50 animate-pulse rounded-2xl"
             />
           ))
         )}
-      </div>
+      </motion.div>
 
       <div ref={endRef} className="h-4" />
-    </div>
+    </motion.div>
   );
 }
