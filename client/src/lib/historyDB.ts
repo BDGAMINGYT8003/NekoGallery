@@ -31,11 +31,15 @@ export async function addImageToHistory(image: GalleryImage) {
   await store.put(imageWithTimestamp);
 
   // Enforce the history limit
-  const count = await store.count();
-  if (count > MAX_HISTORY_ITEMS) {
-    let cursor = await store.index('timestamp').openCursor();
-    if (cursor) {
-      await store.delete(cursor.primaryKey);
+  const keys = await store.index('timestamp').getAllKeys();
+  if (keys.length > MAX_HISTORY_ITEMS) {
+    const keysToDelete = keys.slice(0, keys.length - MAX_HISTORY_ITEMS);
+    for (const key of keysToDelete) {
+      // The primary key is the URL, which is what the timestamp index gives us.
+      const item = await store.index('timestamp').get(key);
+      if (item) {
+        await store.delete(item.url);
+      }
     }
   }
 

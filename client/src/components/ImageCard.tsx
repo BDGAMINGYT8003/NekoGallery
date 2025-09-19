@@ -15,7 +15,7 @@ export default function ImageCard({ image }: ImageCardProps) {
   const imageRef = useRef<HTMLImageElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const isVisible = useIntersection(cardRef, {
-    threshold: 0.1, // Trigger when 10% of the card is visible
+    threshold: 0.01, // Trigger when 1% of the card is visible
     freezeOnceVisible: true,
   });
 
