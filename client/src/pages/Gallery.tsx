@@ -161,65 +161,64 @@ export default function Gallery() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
-      <Card className="mb-8">
-        <CardContent className="p-6">
-          <h1 className="text-3xl font-bold mb-6 bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">
-            Neko Gallery
-          </h1>
-          <CategorySelect
-            selectedCategory={selectedCategory}
-            onCategoryChange={(category) => setSelectedCategory(category)}
-          />
-        </CardContent>
-      </Card>
+    <div className="min-h-screen bg-background">
+      <div className="p-4 md:p-8">
+        <Card className="mb-8 bg-surface-container-low">
+          <CardContent className="p-6">
+            <h1 className="text-4xl font-bold mb-6 bg-gradient-to-r from-primary to-tertiary bg-clip-text text-transparent">
+              Neko Gallery
+            </h1>
+            <CategorySelect
+              selectedCategory={selectedCategory}
+              onCategoryChange={(category) => setSelectedCategory(category)}
+            />
+          </CardContent>
+        </Card>
 
-      {error && (
-        <div className="text-red-500 mb-4 p-4 bg-red-100 rounded-lg">
-          {error}
-        </div>
-      )}
+        {error && (
+          <Card className="mb-4 bg-error-container text-on-error-container">
+            <CardContent className="p-4">
+              <p>{error}</p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 px-4 md:px-8">
         {images.map((image, index) => (
-          <div
+          <Card
             key={`${image.url}-${index}`}
-            className="relative w-full group"
+            className="relative w-full group overflow-hidden"
           >
-            <div className="relative w-full">
+            <CardContent className="p-2">
               <img
                 src={image.url}
                 alt="Artwork"
-                className="w-full h-auto object-contain rounded-lg transition-transform duration-200 group-hover:scale-[1.02]"
+                className="w-full h-auto object-contain rounded-lg transition-transform duration-300 ease-in-out group-hover:scale-105"
                 loading="lazy"
                 onLoad={(e) => {
                   const img = e.target as HTMLImageElement;
-                  const aspectRatio = img.naturalHeight / img.naturalWidth;
                   img.style.aspectRatio = `${img.naturalWidth} / ${img.naturalHeight}`;
                 }}
               />
-              <div className="absolute bottom-0 left-0 right-0 p-2 bg-black/50 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex justify-center rounded-b-lg">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-white hover:text-primary hover:bg-white/20"
-                  onClick={() => handleDownload(image.url, index)}
-                  disabled={downloadingIndex === index}
-                >
-                  <Download className={`w-4 h-4 mr-2 ${downloadingIndex === index ? 'animate-bounce' : ''}`} />
-                  {downloadingIndex === index ? 'Downloading...' : 'Download'}
-                </Button>
-              </div>
+            </CardContent>
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-auto flex justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <Button
+                variant="tertiary"
+                size="sm"
+                onClick={() => handleDownload(image.url, index)}
+                disabled={downloadingIndex === index}
+              >
+                <Download className={`w-4 h-4 mr-2 ${downloadingIndex === index ? 'animate-bounce' : ''}`} />
+                {downloadingIndex === index ? 'Downloading...' : 'Download'}
+              </Button>
             </div>
-          </div>
+          </Card>
         ))}
 
         {loading && (
           Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
-            <div
-              key={`skeleton-${index}`}
-              className="relative w-full aspect-square bg-muted animate-pulse rounded-lg"
-            />
+            <Card key={`skeleton-${index}`} className="w-full aspect-[3/4] animate-pulse bg-surface-container" />
           ))
         )}
       </div>

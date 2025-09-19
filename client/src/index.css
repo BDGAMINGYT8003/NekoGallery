@@ -1,45 +1,40 @@
+@import "./styles/material-theme.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
- 
+
 @layer base {
-  :root {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
- 
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
- 
-    --primary: 346.8 77.2% 49.8%;
-    --primary-foreground: 355.7 100% 97.3%;
- 
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
- 
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
- 
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
- 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
- 
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 346.8 77.2% 49.8%;
- 
-    --radius: 0.5rem;
+  html {
+    /* Custom Scrollbar Styling */
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--md-sys-color-surface-container-highest)) hsl(var(--md-sys-color-surface));
   }
-}
- 
-@layer base {
+
+  /* For Webkit-based browsers (Chrome, Safari) */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--md-sys-color-surface));
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--md-sys-color-surface-container-highest));
+    border-radius: 4px;
+    border: 2px solid hsl(var(--md-sys-color-surface));
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--md-sys-color-outline));
+  }
+
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;

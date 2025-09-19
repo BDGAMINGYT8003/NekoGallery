@@ -1,0 +1,56 @@
+:root {
+  /* Material 3 Expressive - Dark Theme (Black/Grey Palette) */
+
+  /* Color System */
+  --md-sys-color-primary: 260 80% 60%; /* A vibrant purple for primary actions */
+  --md-sys-color-on-primary: 260 10% 95%;
+  --md-sys-color-primary-container: 260 60% 25%;
+  --md-sys-color-on-primary-container: 260 80% 90%;
+
+  --md-sys-color-secondary: 240 10% 60%; /* A cool grey for secondary elements */
+  --md-sys-color-on-secondary: 240 5% 95%;
+  --md-sys-color-secondary-container: 240 10% 25%;
+  --md-sys-color-on-secondary-container: 240 10% 90%;
+
+  --md-sys-color-tertiary: 220 15% 70%; /* A lighter, softer blue-grey for tertiary accents */
+  --md-sys-color-on-tertiary: 220 10% 95%;
+  --md-sys-color-tertiary-container: 220 15% 25%;
+  --md-sys-color-on-tertiary-container: 220 15% 90%;
+
+  --md-sys-color-error: 0 70% 60%;
+  --md-sys-color-on-error: 0 0% 100%;
+  --md-sys-color-error-container: 0 60% 25%;
+  --md-sys-color-on-error-container: 0 70% 90%;
+
+  --md-sys-color-background: 0 0% 4%; /* A very dark, near-black background */
+  --md-sys-color-on-background: 0 0% 90%;
+
+  --md-sys-color-surface: 0 0% 8%; /* A slightly lighter black for main surfaces */
+  --md-sys-color-on-surface: 0 0% 93%;
+  --md-sys-color-on-surface-variant: 0 0% 70%;
+
+  --md-sys-color-surface-container-lowest: 0 0% 2%; /* Deepest black */
+  --md-sys-color-surface-container-low: 0 0% 6%;
+  --md-sys-color-surface-container: 0 0% 10%;
+  --md-sys-color-surface-container-high: 0 0% 14%;
+  --md-sys-color-surface-container-highest: 0 0% 18%; /* Lightest grey-black surface */
+
+  --md-sys-color-outline: 0 0% 40%;
+  --md-sys-color-outline-variant: 0 0% 25%;
+
+  --md-sys-color-inverse-surface: 0 0% 90%;
+  --md-sys-color-inverse-on-surface: 0 0% 10%;
+  --md-sys-color-inverse-primary: 260 80% 40%;
+
+  --md-sys-color-shadow: 0 0% 0%;
+  --md-sys-color-scrim: 0 0% 0%;
+
+  /* Shape System */
+  --md-sys-shape-corner-none: 0rem;
+  --md-sys-shape-corner-extra-small: 0.25rem;
+  --md-sys-shape-corner-small: 0.5rem;
+  --md-sys-shape-corner-medium: 0.75rem;
+  --md-sys-shape-corner-large: 1rem;
+  --md-sys-shape-corner-extra-large: 1.75rem;
+  --md-sys-shape-corner-full: 9999rem;
+}
